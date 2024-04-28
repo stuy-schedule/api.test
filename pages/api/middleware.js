@@ -1,9 +1,13 @@
 import { MongoClient } from "mongodb";
 
-const TIMEOUT = 1000;
+const TIMEOUT = 3000;
 const uri = process.env.MONGODB_URI;
 
 async function getClient() {
+  if (!uri) {
+    throw new Error("MONGODB_URI environment variable is not defined.");
+  }
+
   try {
     const client = new MongoClient(uri);
 
