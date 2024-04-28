@@ -1,22 +1,32 @@
 import { MongoClient } from "mongodb";
 
+const TIMEOUT = 1000;
 const uri = process.env.MONGODB_URI;
 
 async function getClient() {
   try {
-    let client = new MongoClient(uri);
+    const client = new MongoClient(uri);
 
-    await client.connect();
+    const connectionPromise = client.connect();
 
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("MongoDB connection timed out"));
+      }, TIMEOUT);
+    });
+
+    await Promise.race([connectionPromise, timeoutPromise]);
     return client;
   } catch (e) {
-    console.error(e);
+    console.error("Error getting MongoDB client:", e);
+    throw e;
   }
 }
 
 export async function logRequest(req) {
+  let client;
   try {
-    const client = await getClient();
+    client = await getClient();
 
     const db = client.db("stuy_schedule_db");
     const collection = db.collection("logs");
@@ -37,10 +47,21 @@ export async function logRequest(req) {
       referer,
     };
 
-    await collection.insertOne(logData);
+    const insertPromise = collection.insertOne(logData);
 
-    await client.close();
+    const insertTimeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("MongoDB insert operation timed out"));
+      }, TIMEOUT);
+    });
+
+    await Promise.race([insertPromise, insertTimeoutPromise]);
   } catch (e) {
-    console.error(e);
+    console.error("Error in logRequest:", e);
+    throw e;
+  } finally {
+    if (client) {
+      await client.close(); // Close the client if it was opened
+    }
   }
 }
