@@ -153,7 +153,7 @@ export default async function handler(req, res) {
         bell: null,
         block: null,
         testing: null,
-        announcement: 'Algebra I Regents, German Exam'
+        announcement: 'Algebra I Regents\nGerman Exam'
       },
       {
         day: 'June 5, 2024',
